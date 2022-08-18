@@ -23,7 +23,7 @@ public class PostRepository {
 
     public Optional<Post> getById(long id) {
         Post post = posts.get(id);
-        if (post != null && !post.isRemoved()){
+        if (post != null && !post.isRemoved()) {
             return Optional.of(post);
         }
         return Optional.empty();
@@ -35,20 +35,31 @@ public class PostRepository {
      * Если пост есть, тогда он будет перезаписан и возвращен с новым значением.
      * Optional.of сделан специально, чтобы получить ошибку т.к ожидается, что он всегда что-то будет возвращать
      */
-    public Optional<Post> save(Post post) {
-        if (post.isRemoved()){
+    public Optional<Post> save(Post incomingPost) {
+        var incomingId = incomingPost.getId();
+        if (incomingId == 0) {
+            incomingPost.setId(calculateId());
+            posts.put(incomingPost.getId(), incomingPost);
+        } else if (incomingId != 0 && isExistingPost(incomingPost)) {
+            posts.put(incomingId, incomingPost);
+        }else {
             return Optional.empty();
         }
-        if (post.getId() == 0) {
-            post.setId(counterId.incrementAndGet());
-        }
-        posts.put(post.getId(), post);
-        return Optional.of(posts.get(post.getId()));
+
+        return Optional.of(posts.get(incomingPost.getId()));
+    }
+
+    private boolean isExistingPost(Post post) {
+        return posts.get(post.getId()) != null;
+    }
+
+    private long calculateId() {
+        return counterId.incrementAndGet();
     }
 
     public void removeById(long id) {
         Post post = posts.get(id);
-        if(post != null){
+        if (post != null) {
             post.setRemoved(true);
         }
     }
